@@ -1,0 +1,62 @@
+#Set Path
+export PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+#Disable SELinux & setup firewall rules
+setenforce 0
+sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
+sudo firewall-cmd --zone=public --permanent --add-port=6443/tcp
+sudo firewall-cmd --zone=public --permanent --add-port=10250/tcp
+sudo firewall-cmd --zone=public --permanent --add-port=8080/tcp
+systemctl restart firewalld
+systemctl reload firewalld
+
+#Run the command below to enable the br_netfilter kernel module.
+
+modprobe br_netfilter
+echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
+
+#Disable SWAP for kubernetes installation by running the following commands.
+swapoff -a
+#add comment to a file
+#And then edit the '/etc/fstab' file.
+#Comment the swap line UUID as below.
+
+#Install the latest version of Docker-ce from the docker repository.
+#Install the package dependencies for docker-ce.
+sudo yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine
+sudo yum install -y yum-utils \
+  device-mapper-persistent-data \
+  lvm2
+sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum -y install docker-ce-18.09 docker-ce-cli containerd.io
+#sudo yum -y install docker-ce docker-ce-cli containerd.io
+systemctl enable docker.service
+systemctl start docker
+
+sudo sysctl net.bridge.bridge-nf-call-iptables=1
+
+#Add the kubernetes repository to the centos 7 system by running the following command.
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+setenforce 0
+#install the kubelet kubeadm kubectl
+yum install -y kubelet kubeadm kubectl
+
+#start the service kubelet kubeadm kubectl
+
+systemctl enable kubelet && systemctl start kubelet
