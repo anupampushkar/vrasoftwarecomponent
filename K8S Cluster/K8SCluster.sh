@@ -65,8 +65,14 @@ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documen
 #Run the following for networking to be correctly setup on each node:
 sudo sysctl net.bridge.bridge-nf-call-iptables=1
 
+
 #We need join token to connect each node to master. We can retrieved it from by running following command on master node.
 
-joincmd=$(sudo kubeadm token create --print-join-command)
+sudo kubeadm token create --print-join-command
+kubectl get nodes
+export kubever=$(kubectl version | base64 | tr -d '\n')
+kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$kubever"
+kubectl get nodes
 
-echo $joincmd
+
+
